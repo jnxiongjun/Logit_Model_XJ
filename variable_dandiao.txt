@@ -1,0 +1,36 @@
+#判断变量的单调性，结合excel
+# 特征列—变量离散化——等宽分箱/等频分箱
+#==============================================================================
+#==============================================================================
+feature_columns = [x for x in data.columns if x not in ['bad1']]
+feature_data = data[feature_columns]
+
+#bad列重新赋值索引
+y=data['bad1'].values
+Y=pd.Series(y,index=range(feature_data.shape[0]))
+
+
+#特征列离散化
+feature_binning=data_cut(feature_data.values)
+feature_data_bin=pd.DataFrame(feature_binning,columns=feature_columns)
+
+#特征列添加因变量bad，还原为原始数据
+data=feature_data_bin
+#插入因变量至第一列
+data.insert(0,'bad1',Y) 
+
+
+#变量的交叉表-----根据分箱后的变量数值来判断变量的单调性
+contact_cross = pd.crosstab(data.contact_cnt, data.bad1)
+#分段的总样本数
+k1=contact_cross.values[:,0]+contact_cross.values[:,1]
+#分段的坏样本率
+k2=contact_cross.values[:,1]/k1
+
+contact_cross['sum_bad']=pd.Series(k1,index=range(contact_cross.shape[0]))
+contact_cross['bad_rate']=pd.Series(k2,index=range(contact_cross.shape[0]))
+#画图或将contact_cross的数据复制到excel中
+plt.figure(figsize=(9, 4))
+plt.subplot(121)
+plt.plot(contact_cross.index,contact_cross['bad_rate'],linestyle='--', color='r')
+plt.bar(contact_cross.index,contact_cross['sum_bad'],)
